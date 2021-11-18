@@ -60,28 +60,30 @@ def getPredictedClass(model):
     gray_image = gray_image.reshape(1, 50, 50, 1)
 
     prediction = model.predict_on_batch(gray_image)
-    print(prediction)
     predicted_class = np.argmax(prediction)
-    print(predicted_class)
-    if predicted_class == 1:
-        return "Palm"
-    elif predicted_class == 2:
+
+    # print(prediction)
+    # print(predicted_class)
+
+    if predicted_class == 0:
+        return "Stop"
+    elif predicted_class == 1:
         return "L"
-    elif predicted_class == 3:
+    elif predicted_class == 2:
         return "Fist"
-    elif predicted_class == 4:
+    elif predicted_class == 3:
         return "Rock On"
-    elif predicted_class == 5:
+    elif predicted_class == 4:
         return "Fist Thumb"
+    elif predicted_class == 5:
+        return "Index/One"
     elif predicted_class == 6:
-        return "Index"
-    elif predicted_class == 7:
         return "OK"
-    elif predicted_class == 8:
+    elif predicted_class == 7:
         return "Karate Chop"
-    elif predicted_class == 9:
+    elif predicted_class == 8:
         return "C"
-    elif predicted_class == 10:
+    elif predicted_class == 9:
         return "High Five"
 
 
