@@ -20,7 +20,7 @@ def run_avg(image, accumWeight):
     cv2.accumulateWeighted(image, bg, accumWeight)
 
 
-def segment(image, threshold=25):
+def segment(image, threshold=30):
     global bg
     # find the absolute difference between background and current frame
     diff = cv2.absdiff(bg.astype("uint8"), image)
