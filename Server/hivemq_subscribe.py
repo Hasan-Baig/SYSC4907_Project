@@ -15,7 +15,7 @@
 #
 import paho.mqtt.client as paho
 from paho import mqtt
-import constants
+import mqtt_constants
 
 # setting callbacks for different events to see if it works, print the message etc.
 def on_connect(client, userdata, flags, rc, properties=None):
@@ -31,7 +31,8 @@ def on_subscribe(client, userdata, mid, granted_qos, properties=None):
 
 # print message, useful for checking if it was successful
 def on_message(client, userdata, msg: paho.MQTTMessage):
-    print(msg.topic + " " + str(msg.qos) + " " + str(msg.payload))
+    print(msg.topic + " " + str(msg.qos) + " " + str(msg.payload, "utf-8"))
+    print("Type: " + str(type(msg.payload)))
 
     # Analyze the message
     if msg.payload.isdigit():
@@ -52,7 +53,8 @@ def analyze_msg(message):
     else:
         print("No action assigned.")
 
-def main():
+
+def setup() -> paho.Client:
     # using MQTT version 5 here, for 3.1.1: MQTTv311, 3.1: MQTTv31
     # userdata is user defined data of any type, updated by user_data_set()
     # client_id is the given name of the client
@@ -62,21 +64,26 @@ def main():
     # enable TLS for secure connection
     client.tls_set(tls_version=mqtt.client.ssl.PROTOCOL_TLS)
     # set username and password
-    client.username_pw_set(constants.mqtt_username, constants.mqtt_password)
+    client.username_pw_set(mqtt_constants.mqtt_username,
+                           mqtt_constants.mqtt_password)
     # connect to HiveMQ Cloud on port 8883 (default for MQTT)
-    client.connect(constants.mqtt_host, constants.mqtt_port)
+    client.connect(mqtt_constants.mqtt_host, mqtt_constants.mqtt_port)
 
     # setting callbacks, use separate functions like above for better visibility
     client.on_subscribe = on_subscribe
     client.on_message = on_message
     client.on_publish = on_publish
 
+    # Start a background loop to handle incoming messages and reconnections
+    client.loop_start()
+
+    return client
+
+
+def subscribe(client: paho.Client):
     # subscribe to all topics of encyclopedia by using the wildcard "#"
-    client.subscribe(constants.mqtt_topic_subscribe, qos=2)
+    client.subscribe(mqtt_constants.mqtt_topic_subscribe, qos=2)
 
-    # loop_forever for simplicity, here you need to stop the loop manually
-    # you can also use loop_start and loop_stop
-    client.loop_forever()
 
-if __name__ == '__main__':
-    main()
+def stop(client: paho.Client):
+    client.loop_stop()
