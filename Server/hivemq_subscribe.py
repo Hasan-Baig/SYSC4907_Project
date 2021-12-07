@@ -17,6 +17,7 @@ import paho.mqtt.client as paho
 from paho import mqtt
 import mqtt_constants
 
+
 # setting callbacks for different events to see if it works, print the message etc.
 def on_connect(client, userdata, flags, rc, properties=None):
     print("CONNACK received with code %s." % rc)
@@ -40,15 +41,15 @@ def on_message(client, userdata, msg: paho.MQTTMessage):
 
 # Stub that prints out different gesture actions
 def analyze_msg(message):
-    if (message == 1):
+    if (message == 0):
         print("Turn on the lights...")
-    elif (message == 2):
+    elif (message == 1):
         print("Unlock the door...")
-    elif (message == 3):
+    elif (message == 2):
         print("Roll down the blinds...")
-    elif (message == 4):
+    elif (message == 3):
         print("Start the vacuum...")
-    elif (message == 5):
+    elif (message == 4):
         print("Make some coffee...")
     else:
         print("No action assigned.")

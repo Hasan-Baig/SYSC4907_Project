@@ -1,6 +1,9 @@
 import hivemq_subscribe as mqtt
+import firebase
 
 client = None
+session = None
+gestures = None
 
 
 def main():
@@ -25,6 +28,15 @@ def intro_message():
 
 
 def setup():
+    # Connect to firebase
+    global session
+    session = firebase.setup_firebase()
+
+    # Read the realtime database
+    global gestures
+    gestures = firebase.read_gestures_from_db(session)
+    print(gestures)
+
     # Setup the mqtt subscribe stuff
     global client
     client = mqtt.setup()
