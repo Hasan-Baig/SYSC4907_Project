@@ -17,74 +17,67 @@ import paho.mqtt.client as paho
 from paho import mqtt
 import mqtt_constants
 
+class hive_mq_client:
+    
+    def __init__(self, get_gestures):
+        self.get_gestures = get_gestures
+        
+        # using MQTT version 5 here, for 3.1.1: MQTTv311, 3.1: MQTTv31
+        # userdata is user defined data of any type, updated by user_data_set()
+        # client_id is the given name of the client
+        self.client = paho.Client(client_id="", userdata=None, protocol=paho.MQTTv5)
+        self.client.on_connect = self.on_connect
 
-# setting callbacks for different events to see if it works, print the message etc.
-def on_connect(client, userdata, flags, rc, properties=None):
-    print("CONNACK received with code %s." % rc)
+        # enable TLS for secure connection
+        self.client.tls_set(tls_version=mqtt.client.ssl.PROTOCOL_TLS)
+        # set username and password
+        self.client.username_pw_set(mqtt_constants.mqtt_username,
+                            mqtt_constants.mqtt_password)
+        # connect to HiveMQ Cloud on port 8883 (default for MQTT)
+        self.client.connect(mqtt_constants.mqtt_host, mqtt_constants.mqtt_port)
 
-# with this callback you can see if your publish was successful
-def on_publish(client, userdata, mid, properties=None):
-    print("mid: " + str(mid))
+        # setting callbacks, use separate functions like above for better visibility
+        self.client.on_subscribe = self.on_subscribe
+        self.client.on_message = self.on_message
+        self.client.on_publish = self.on_publish
 
-# print which topic was subscribed to
-def on_subscribe(client, userdata, mid, granted_qos, properties=None):
-    print("Subscribed: " + str(mid) + " " + str(granted_qos))
+        # Start a background loop to handle incoming messages and reconnections
+        self.client.loop_start()
+    
+    # setting callbacks for different events to see if it works, print the message etc.
+    def on_connect(self, client, userdata, flags, rc, properties=None):
+        print("CONNACK received with code %s." % rc)
 
-# print message, useful for checking if it was successful
-def on_message(client, userdata, msg: paho.MQTTMessage):
-    print(msg.topic + " " + str(msg.qos) + " " + str(msg.payload, "utf-8"))
-    print("Type: " + str(type(msg.payload)))
+    # with this callback you can see if your publish was successful
+    def on_publish(self, client, userdata, mid, properties=None):
+        print("mid: " + str(mid))
 
-    # Analyze the message
-    if msg.payload.isdigit():
-        analyze_msg(int(msg.payload))
+    # print which topic was subscribed to
+    def on_subscribe(self, client, userdata, mid, granted_qos, properties=None):
+        print("Subscribed: " + str(mid) + " " + str(granted_qos))
 
-# Stub that prints out different gesture actions
-def analyze_msg(message):
-    if (message == 0):
-        print("Turn on the lights...")
-    elif (message == 1):
-        print("Unlock the door...")
-    elif (message == 2):
-        print("Roll down the blinds...")
-    elif (message == 3):
-        print("Start the vacuum...")
-    elif (message == 4):
-        print("Make some coffee...")
-    else:
-        print("No action assigned.")
+    # print message, useful for checking if it was successful
+    def on_message(self, client, userdata, msg: paho.MQTTMessage):
+        print(msg.topic + " " + str(msg.qos) + " " + str(msg.payload, "utf-8"))
+        print("Type: " + str(type(msg.payload)))
 
+        # Analyze the message
+        if msg.payload.isdigit():
+            self.analyze_msg(int(msg.payload))
 
-def setup() -> paho.Client:
-    # using MQTT version 5 here, for 3.1.1: MQTTv311, 3.1: MQTTv31
-    # userdata is user defined data of any type, updated by user_data_set()
-    # client_id is the given name of the client
-    client = paho.Client(client_id="", userdata=None, protocol=paho.MQTTv5)
-    client.on_connect = on_connect
-
-    # enable TLS for secure connection
-    client.tls_set(tls_version=mqtt.client.ssl.PROTOCOL_TLS)
-    # set username and password
-    client.username_pw_set(mqtt_constants.mqtt_username,
-                           mqtt_constants.mqtt_password)
-    # connect to HiveMQ Cloud on port 8883 (default for MQTT)
-    client.connect(mqtt_constants.mqtt_host, mqtt_constants.mqtt_port)
-
-    # setting callbacks, use separate functions like above for better visibility
-    client.on_subscribe = on_subscribe
-    client.on_message = on_message
-    client.on_publish = on_publish
-
-    # Start a background loop to handle incoming messages and reconnections
-    client.loop_start()
-
-    return client
+    # Stub that prints out different gesture actions
+    def analyze_msg(self, message):
+        gestures = self.get_gestures()
+        
+        if len(gestures) > message:
+            print("Activating " + gestures[message]['name'])
+            print("Connecting to... " + gestures[message]["ip"])
 
 
-def subscribe(client: paho.Client):
-    # subscribe to all topics of encyclopedia by using the wildcard "#"
-    client.subscribe(mqtt_constants.mqtt_topic_subscribe, qos=2)
+    def subscribe(self):
+        # subscribe to all topics of encyclopedia by using the wildcard "#"
+        self.client.subscribe(mqtt_constants.mqtt_topic_subscribe, qos=2)
 
 
-def stop(client: paho.Client):
-    client.loop_stop()
+    def stop(self):
+        self.client.loop_stop()

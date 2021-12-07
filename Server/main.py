@@ -1,9 +1,9 @@
+from threading import Thread
 import hivemq_subscribe as mqtt
 import firebase
 
-client = None
-session = None
-gestures = None
+mqtt_client: mqtt.hive_mq_client = None
+firebase_session: firebase.firebase_session = None
 
 
 def main():
@@ -13,11 +13,12 @@ def main():
     # Setup code
     setup()
 
-    # Run the event loop
-    start()
-
-    # Shutdown everything
+    # Run until user quits the program
+    main_loop()
+    
+    # Shutdown all the components gracefully
     shutdown()
+
 
 
 def intro_message():
@@ -29,30 +30,34 @@ def intro_message():
 
 def setup():
     # Connect to firebase
-    global session
-    session = firebase.setup_firebase()
+    global firebase_session
+    firebase_session = firebase.firebase_session()
 
     # Read the realtime database
-    global gestures
-    gestures = firebase.read_gestures_from_db(session)
-    print(gestures)
+    firebase_session.update_gestures_from_db()
+    
+    # Schedule a task to update the gestures every minute in a different thread
+    Thread(target=firebase_session.schedule_updating_gestures).start()
 
     # Setup the mqtt subscribe stuff
-    global client
-    client = mqtt.setup()
-    mqtt.subscribe(client)
+    global mqtt_client
+    mqtt_client = mqtt.hive_mq_client(firebase_session.get_gestures)
+    mqtt_client.subscribe()
 
 
-def start():
-    # Start the main loop
+def main_loop():
+    # End the program when the user enters something
     input("Enter anything to have the program exit...\n")
+    shutdown()
 
 
 def shutdown():
     print("Shutting down.... goodbye")
 
-    global client
-    mqtt.stop(client)
+    global firebase_session
+    firebase_session.stop_updating_gestures()
+    global mqtt_client
+    mqtt_client.stop()
 
 
 if __name__ == '__main__':
