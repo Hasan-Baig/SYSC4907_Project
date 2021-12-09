@@ -41,8 +41,7 @@ class firebase_session:
         return response
 
     def update_gestures_from_db(self):
-        url = "https://smarthome-4feea-default-rtdb.firebaseio.com/gestures/user:" + \
-            self.email.replace(".", "") + ".json"
+        url = "https://smarthome-4feea-default-rtdb.firebaseio.com/user:" + self.email.replace(".", "") + "/actuators.json"
         print(url)
 
         response = self.make_request(url)
