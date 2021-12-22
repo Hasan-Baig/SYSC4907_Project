@@ -9,7 +9,7 @@ API_KEY = "AIzaSyAx-h8OoQMpsBRplnKzmM0gwCpZpmcl2pk"
 class firebase_session:
     
     # The time between each firebase realtime db update
-    UPDATE_TIME = 10
+    UPDATE_TIME = 30
     
     def __init__(self):
         # Loop enter the user enters a valid account

@@ -16,6 +16,8 @@
 import paho.mqtt.client as paho
 from paho import mqtt
 import mqtt_constants
+import kasa
+import asyncio
 
 class hive_mq_client:
     
@@ -63,15 +65,24 @@ class hive_mq_client:
 
         # Analyze the message
         if msg.payload.isdigit():
-            self.analyze_msg(int(msg.payload))
+            asyncio.run(self.analyze_msg(int(msg.payload)))
 
     # Stub that prints out different gesture actions
-    def analyze_msg(self, message):
+    async def analyze_msg(self, message):
         gestures = self.get_gestures()
         
         if len(gestures) > message:
             print("Activating " + gestures[message]['name'])
             print("Connecting to... " + gestures[message]["ip"])
+            
+            # Turn the plug on/off
+            # Set the state to opposite of what it was before
+            plug = kasa.SmartPlug(gestures[message]["ip"])
+            await plug.update()
+            if plug.is_on:
+                await plug.turn_off()
+            else:
+                await plug.turn_on()
 
 
     def subscribe(self):
