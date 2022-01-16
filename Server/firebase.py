@@ -9,7 +9,7 @@ API_KEY = "AIzaSyAx-h8OoQMpsBRplnKzmM0gwCpZpmcl2pk"
 class firebase_session:
     
     # The time between each firebase realtime db update
-    UPDATE_TIME = 10
+    UPDATE_TIME = 30
     
     def __init__(self):
         # Loop enter the user enters a valid account
@@ -41,8 +41,7 @@ class firebase_session:
         return response
 
     def update_gestures_from_db(self):
-        url = "https://smarthome-4feea-default-rtdb.firebaseio.com/gestures/user:" + \
-            self.email.replace(".", "") + ".json"
+        url = "https://smarthome-4feea-default-rtdb.firebaseio.com/user:" + self.email.replace(".", "") + "/actuators.json"
         print(url)
 
         response = self.make_request(url)
