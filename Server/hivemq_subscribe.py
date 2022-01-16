@@ -75,14 +75,17 @@ class hive_mq_client:
             print("Activating " + gestures[message]['name'])
             print("Connecting to... " + gestures[message]["ip"])
             
-            # Turn the plug on/off
-            # Set the state to opposite of what it was before
-            plug = kasa.SmartPlug(gestures[message]["ip"])
-            await plug.update()
-            if plug.is_on:
-                await plug.turn_off()
-            else:
-                await plug.turn_on()
+            try:
+                # Turn the plug on/off
+                # Set the state to opposite of what it was before
+                plug = kasa.SmartPlug(gestures[message]["ip"])
+                await plug.update()
+                if plug.is_on:
+                    await plug.turn_off()
+                else:
+                    await plug.turn_on()
+            except Exception:
+                print("Failed to connect to: " + gestures[message]['ip'])
 
 
     def subscribe(self):
