@@ -41,7 +41,7 @@ def setup():
 
     # Setup the mqtt subscribe stuff
     global mqtt_client
-    mqtt_client = mqtt.hive_mq_client(firebase_session.get_gestures)
+    mqtt_client = mqtt.hive_mq_client(firebase_session)
     mqtt_client.subscribe()
 
 

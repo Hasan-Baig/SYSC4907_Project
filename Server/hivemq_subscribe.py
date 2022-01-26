@@ -13,17 +13,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+from firebase import firebase_session
 import paho.mqtt.client as paho
 from paho import mqtt
 import mqtt_constants
 import kasa
 import asyncio
+import time
 
 class hive_mq_client:
-    
-    def __init__(self, get_gestures):
-        self.get_gestures = get_gestures
-        
+    firebase_session=None
+    def __init__(self, firebase_session):
+        self.firebase_session=firebase_session
+        self.get_gestures = firebase_session.get_gestures
+
         # using MQTT version 5 here, for 3.1.1: MQTTv311, 3.1: MQTTv31
         # userdata is user defined data of any type, updated by user_data_set()
         # client_id is the given name of the client
@@ -74,7 +77,8 @@ class hive_mq_client:
         if len(gestures) > message:
             print("Activating " + gestures[message]['name'])
             print("Connecting to... " + gestures[message]["ip"])
-            
+
+            self.firebase_session.logEvent(self.firebase_session, gestures[message]['name'], gestures[message]["ip"], time.ctime())
             try:
                 # Turn the plug on/off
                 # Set the state to opposite of what it was before
@@ -91,7 +95,6 @@ class hive_mq_client:
     def subscribe(self):
         # subscribe to all topics of encyclopedia by using the wildcard "#"
         self.client.subscribe(mqtt_constants.mqtt_topic_subscribe, qos=2)
-
 
     def stop(self):
         self.client.loop_stop()

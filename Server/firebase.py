@@ -2,15 +2,16 @@ import requests
 import time
 import sched
 from getpass import getpass
+from firebase_admin import db
+import json
 
 API_KEY = "AIzaSyAx-h8OoQMpsBRplnKzmM0gwCpZpmcl2pk"
-
 
 class firebase_session:
     
     # The time between each firebase realtime db update
     UPDATE_TIME = 30
-    
+
     def __init__(self):
         # Loop enter the user enters a valid account
         while True:
@@ -68,6 +69,20 @@ class firebase_session:
         if hasattr(self, "next_event"):
             self.sched.cancel(self.next_event)
             self.sched = None
+
+    def logEvent(self, firebase_session, actuator, ip, timeStamp):
+        url = "https://smarthome-4feea-default-rtdb.firebaseio.com/user:" + firebase_session.email.replace(".", "") + "/events.json"
+        body = json.dumps({'actuatorName' : actuator,'ip':ip,'timestamp': timeStamp})
+        method = "POST"
+
+        if firebase_session.is_token_expired():
+            firebase_session.refresh_token()
+
+        response = requests.request(
+            method=method,
+            url=url,
+            data=body
+        )
 
     def signin(self, email: str, password: str):
         url = "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=" + API_KEY
