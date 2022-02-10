@@ -5,9 +5,23 @@ import numpy as np
 from sklearn.metrics import pairwise
 from tensorflow.keras.models import load_model
 # from scipy.misc import imresize
+import paho.mqtt.client as mqtt
 
 # global variables
 bg = None
+IMG_SIZE_X = 120
+IMG_SIZE_Y = 320
+MODEL_NAME = "my_model_version_2.h5" # "my_model.h5"
+
+# MQTT global
+client = ""
+payload = "2"
+mqtt_clientId = ""
+mqtt_username = "testing"
+mqtt_password = "Abc12345"
+mqtt_host = "f51bc650a9c24db18f2b2d13134a6da1.s1.eu.hivemq.cloud"
+mqtt_port = 8883
+mqtt_topic_publish = "gestures/gesture1"
 
 def run_avg(image, accumWeight):
     global bg
@@ -20,7 +34,7 @@ def run_avg(image, accumWeight):
     cv2.accumulateWeighted(image, bg, accumWeight)
 
 
-def segment(image, threshold=30):
+def segment(image, threshold=15):
     global bg
     # find the absolute difference between background and current frame
     diff = cv2.absdiff(bg.astype("uint8"), image)
@@ -42,7 +56,7 @@ def segment(image, threshold=30):
 
 def _load_weights():
     try:
-        model = load_model("my_model.h5")
+        model = load_model(MODEL_NAME)
         print(model.summary())
         # print(model.get_weights())
         # print(model.optimizer)
@@ -55,39 +69,69 @@ def getPredictedClass(model):
 
     image = cv2.imread('Temp.png')
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    gray_image = cv2.resize(gray_image, [50, 50])
-
-    gray_image = gray_image.reshape(1, 50, 50, 1)
+    gray_image = cv2.resize(gray_image, [IMG_SIZE_Y, IMG_SIZE_X])
+    gray_image = gray_image.reshape(1, IMG_SIZE_X, IMG_SIZE_Y, 1)
 
     prediction = model.predict_on_batch(gray_image)
+    print(prediction)
     predicted_class = np.argmax(prediction)
 
-    # print(prediction)
-    # print(predicted_class)
-
     if predicted_class == 0:
-        return "Stop"
+        gesture = "Thumb down"
     elif predicted_class == 1:
-        return "L"
+        gesture = "Palm (Horizontal)"
     elif predicted_class == 2:
-        return "Fist"
+        gesture = "L"
     elif predicted_class == 3:
-        return "Rock On"
+        gesture = "Fist (Horizontal)"
     elif predicted_class == 4:
-        return "Fist Thumb"
+        gesture = "Fist (Vertical)"
     elif predicted_class == 5:
-        return "Index/One"
+        gesture = "Thumbs up"
     elif predicted_class == 6:
-        return "OK"
+        gesture = "Index"
     elif predicted_class == 7:
-        return "Karate Chop"
+        gesture = "OK"
     elif predicted_class == 8:
-        return "C"
+        gesture = "Palm (Vertical)"
     elif predicted_class == 9:
-        return "High Five"
+        gesture = "C"
+    else:
+        gesture = "None"
 
+    print(gesture)
+    return gesture
+
+
+################
+
+def init_mqtt():
+    global client
+    # Set up the client
+    client = mqtt.Client(client_id=mqtt_clientId)
+    client.username_pw_set(
+        username=mqtt_username,
+        password=mqtt_password
+    )
+    # client.tls_set(tls_version=mqtt.ssl.PROTOCOL_TLS)
+    client.connect(mqtt_host, 8883, 60)
+
+    # Set up the callbacks
+    client.on_publish = on_publish
+
+def on_publish(client: mqtt.Client, userdata, mid, properties=None):
+    print("mid: " + str(mid))
+
+################
 
 if __name__ == "__main__":
+    ################
+
+    # initialize mqtt
+    init_mqtt()
+
+    ################
+
     # initialize accumulated weight
     accumWeight = 0.5
 
@@ -149,10 +193,19 @@ if __name__ == "__main__":
 
                 # count the number of fingers
                 # fingers = count(thresholded, segmented)
-                if k % (fps / 6) == 0:
+                if k % (fps / 30) == 0:
                     cv2.imwrite('Temp.png', thresholded)
                     predictedClass = getPredictedClass(model)
                     cv2.putText(clone, str(predictedClass), (70, 45), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+                    ################
+                    print("b4")
+                    client.publish(
+                        topic=mqtt_topic_publish,
+                        payload=payload,
+                        qos=2
+                    )
+                    print("done")
+                    ################
 
                 # show the thresholded image
                 cv2.imshow("Thesholded", thresholded)

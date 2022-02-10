@@ -23,6 +23,12 @@ class HandDetector:
     """
 
     def __init__(self, mode=False, maxHands=2, detectionCon=0.5, trackCon=0.5):
+        """
+        :param mode: In static mode, detection is done on each image: slower
+        :param maxHands: Maximum number of hands to detect
+        :param detectionCon: Minimum Detection Confidence Threshold
+        :param minTrackCon: Minimum Tracking Confidence Threshold
+        """
         self.mode = mode
         self.maxHands = maxHands
         self.detectionCon = detectionCon
