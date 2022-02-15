@@ -7,6 +7,7 @@ from tensorflow.keras.models import load_model
 # from scipy.misc import imresize
 import paho.mqtt.client as mqtt
 
+
 # global variables
 bg = None
 IMG_SIZE_X = 120
@@ -15,7 +16,7 @@ MODEL_NAME = "my_model_version_2.h5" # "my_model.h5"
 
 # MQTT global
 client = ""
-payload = "2"
+payload = "1"
 mqtt_clientId = ""
 mqtt_username = "testing"
 mqtt_password = "Abc12345"
@@ -113,7 +114,7 @@ def init_mqtt():
         username=mqtt_username,
         password=mqtt_password
     )
-    # client.tls_set(tls_version=mqtt.ssl.PROTOCOL_TLS)
+    client.tls_set(tls_version=mqtt.ssl.PROTOCOL_TLS)
     client.connect(mqtt_host, 8883, 60)
 
     # Set up the callbacks
@@ -193,7 +194,7 @@ if __name__ == "__main__":
 
                 # count the number of fingers
                 # fingers = count(thresholded, segmented)
-                if k % (fps / 30) == 0:
+                if k % (fps / 15) == 0:
                     cv2.imwrite('Temp.png', thresholded)
                     predictedClass = getPredictedClass(model)
                     cv2.putText(clone, str(predictedClass), (70, 45), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
