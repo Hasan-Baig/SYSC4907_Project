@@ -94,7 +94,7 @@ class hive_mq_client:
 
     def subscribe(self):
         # subscribe to all topics of encyclopedia by using the wildcard "#"
-        self.client.subscribe(mqtt_constants.mqtt_topic_subscribe, qos=2)
+        self.client.subscribe(mqtt_constants.mqtt_topic_subscribe + self.firebase_session.get_mqtt_topic(), qos=2)
 
     def stop(self):
         self.client.loop_stop()

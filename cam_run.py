@@ -15,14 +15,14 @@ IMG_SIZE_Y = 320
 MODEL_NAME = "my_model_version_2.h5" # "my_model.h5"
 
 # MQTT global
-client = ""
+client: mqtt.Client
 payload = "1"
 mqtt_clientId = ""
 mqtt_username = "testing"
 mqtt_password = "Abc12345"
 mqtt_host = "f51bc650a9c24db18f2b2d13134a6da1.s1.eu.hivemq.cloud"
 mqtt_port = 8883
-mqtt_topic_publish = "gestures/gesture1"
+mqtt_topic_publish = "gestures/dannywall"
 
 def run_avg(image, accumWeight):
     global bg
@@ -104,6 +104,14 @@ def getPredictedClass(model):
     return gesture
 
 
+def get_payload(gesture):
+    if gesture == "L":
+        return "1"
+    elif gesture == "Palm (Vertical)":
+        return "0"
+    else:
+        return "-1"
+
 ################
 
 def init_mqtt():
@@ -119,6 +127,7 @@ def init_mqtt():
 
     # Set up the callbacks
     client.on_publish = on_publish
+    client.loop_start()
 
 def on_publish(client: mqtt.Client, userdata, mid, properties=None):
     print("mid: " + str(mid))
@@ -148,6 +157,8 @@ if __name__ == "__main__":
     calibrated = False
     model = _load_weights()
     k = 0
+    lastGesture = ""
+    gesturePredictedTimes = 0
     # keep looping, until interrupted
     while (True):
         # get the current frame
@@ -199,14 +210,25 @@ if __name__ == "__main__":
                     predictedClass = getPredictedClass(model)
                     cv2.putText(clone, str(predictedClass), (70, 45), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
                     ################
-                    print("b4")
-                    client.publish(
-                        topic=mqtt_topic_publish,
-                        payload=payload,
-                        qos=2
-                    )
-                    print("done")
-                    ################
+
+                    if predictedClass != "None" and predictedClass == lastGesture:
+                        print("Gesture: " + predictedClass)
+                        gesturePredictedTimes += 1
+                    else:
+                        gesturePredictedTimes = 0
+                        lastGesture = predictedClass
+
+                    if gesturePredictedTimes == 4:
+                        result = client.publish(
+                            topic=mqtt_topic_publish,
+                            payload=get_payload(predictedClass),
+                            qos=2
+                        )
+                        # Wait before continuing up to 1 second
+                        result.wait_for_publish(timeout=1)
+                        print("message sent")
+                        ################
+
 
                 # show the thresholded image
                 cv2.imshow("Thesholded", thresholded)

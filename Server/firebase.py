@@ -41,6 +41,9 @@ class firebase_session:
 
         return response
 
+    def get_mqtt_topic(self):
+        return self.email.split("@")[0].strip(".")
+
     def update_gestures_from_db(self):
         url = "https://smarthome-4feea-default-rtdb.firebaseio.com/user:" + self.email.replace(".", "") + "/actuators.json"
         print(url)
