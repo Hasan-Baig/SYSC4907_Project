@@ -71,9 +71,10 @@ class firebase_session:
             self.sched = None
 
     def logEvent(self, firebase_session, actuator, ip, timeStamp):
-        url = "https://smarthome-4feea-default-rtdb.firebaseio.com/user:" + firebase_session.email.replace(".", "") + "/events.json"
+        index = self.numberEvents();
+        url = "https://smarthome-4feea-default-rtdb.firebaseio.com/user:" + firebase_session.email.replace(".", "") + "/events/" + str(index) + ".json"
         body = json.dumps({'actuatorName' : actuator,'ip':ip,'timestamp': timeStamp})
-        method = "POST"
+        method = "PUT"
 
         if firebase_session.is_token_expired():
             firebase_session.refresh_token()
@@ -83,6 +84,23 @@ class firebase_session:
             url=url,
             data=body
         )
+
+    def numberEvents(self):
+        events = self.fetchEvents()
+        if (events == None):
+            return 0
+        else:
+            return len(events)
+
+
+    def fetchEvents(self):
+        url = "https://smarthome-4feea-default-rtdb.firebaseio.com/user:" + self.email.replace(".", "") + "/events.json"
+        print(url)
+
+        response = self.make_request(url)
+        self.events = response.json()
+
+        return self.events
 
     def signin(self, email: str, password: str):
         url = "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=" + API_KEY
