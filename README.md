@@ -10,7 +10,7 @@ Fourth Year Project
 
 ## Running
 1. Open in Pycharm
-2. Run "hand_gesture_detection_v2.py"
+2. Run "hand_gesture_detection_v2.py" in the "C_Computer_Vision_Machine_Learning" directory
 
 ## Hand Gestures 
 | Hand Gesture  | Example |
