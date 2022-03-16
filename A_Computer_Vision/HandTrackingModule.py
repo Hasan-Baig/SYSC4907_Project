@@ -82,7 +82,7 @@ class HandDetector:
                         myHand["type"] = "Left"
                     else:
                         myHand["type"] = "Right"
-                else:myHand["type"] = handType.classification[0].label
+                else: myHand["type"] = handType.classification[0].label
                 allHands.append(myHand)
 
                 # draw
@@ -94,6 +94,7 @@ class HandDetector:
                                   (255, 0, 255), 2)
                     cv2.putText(img,myHand["type"],(bbox[0] - 30, bbox[1] - 30),cv2.FONT_HERSHEY_PLAIN,
                                 2,(255, 0, 255),2)
+
         if draw:
             return allHands,img
         else:

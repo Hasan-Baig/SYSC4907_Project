@@ -1,7 +1,12 @@
+"""
+Hand and Eye Tracking Module
+Author: Hasan Baig
+Date: January 16 2022
+"""
 
 import cv2
-from CV.HandTrackingModule import HandDetector
-from CV.EyeTrackingModule import EyeDetector
+from HandTrackingModule import HandDetector
+from EyeTrackingModule import EyeDetector
 
 def main():
     cap = cv2.VideoCapture(0)
@@ -14,6 +19,9 @@ def main():
 
         # Get image frame
         success, img = cap.read()
+
+        # Flip the frame vertically
+        img = cv2.flip(img, 1)
 
         # Find the face and its landmarks with draw
         img, faces = eyeDetector.findFaceMesh(img)

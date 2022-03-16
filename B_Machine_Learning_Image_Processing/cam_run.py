@@ -1,43 +1,19 @@
-# organize imports
+"""
+Machine Learning Implementation with Image Processing
+Author: Hasan Baig
+Date: November 06 2021
+"""
+
 import cv2
 import imutils
 import numpy as np
 from tensorflow.keras.models import load_model
-import paho.mqtt.client as mqtt
-from CV.HandTrackingModule import HandDetector
-# import ssl
-#
-# ssl_ctx = ssl.create_default_context()
-# ssl_ctx.check_hostname = False
-# ssl_ctx.verify_mode = ssl.CERT_NONE
-#
-# try:
-#     _create_unverified_https_context = ssl._create_unverified_context
-# except AttributeError:
-#     # Legacy Python that doesn't verify HTTPS certificates by default
-#     pass
-# else:
-#     # Handle target environment that doesn't support HTTPS verification
-#     ssl._create_default_https_context = _create_unverified_https_context
-
-from CV.EyeTrackingModule import EyeDetector
-
 
 # global variables
 bg = None
 IMG_SIZE_X = 120
 IMG_SIZE_Y = 320
 MODEL_NAME = "my_model_version_2.h5" #"my_model.h5"
-
-# MQTT global
-client = ""
-payload = "2"
-mqtt_clientId = ""
-mqtt_username = "testing"
-mqtt_password = "Abc12345"
-mqtt_host = "f51bc650a9c24db18f2b2d13134a6da1.s1.eu.hivemq.cloud"
-mqtt_port = 8883
-mqtt_topic_publish = "gestures/gesture1"
 
 def run_avg(image, accumWeight):
     global bg
@@ -48,7 +24,6 @@ def run_avg(image, accumWeight):
 
     # compute weighted average, accumulate it and update the background
     cv2.accumulateWeighted(image, bg, accumWeight)
-
 
 def segment(image, threshold=15):
     global bg
@@ -69,17 +44,13 @@ def segment(image, threshold=15):
         segmented = max(cnts, key=cv2.contourArea)
         return (thresholded, segmented)
 
-
 def _load_weights():
     try:
         model = load_model(MODEL_NAME)
         print(model.summary())
-        # print(model.get_weights())
-        # print(model.optimizer)
         return model
     except Exception as e:
         return None
-
 
 def getPredictedClass(model):
 
@@ -89,7 +60,6 @@ def getPredictedClass(model):
     gray_image = gray_image.reshape(1, IMG_SIZE_X, IMG_SIZE_Y, 1)
 
     prediction = model.predict_on_batch(gray_image)
-    # print(prediction)
     predicted_class = np.argmax(prediction)
 
     if predicted_class == 1:
@@ -115,60 +85,15 @@ def getPredictedClass(model):
     else:
         gesture = "None"
 
-    # print(gesture)
     return gesture
 
-
-################
-
-def init_mqtt():
-    global client #, mqtt_clientId, mqtt_username, mqtt_password, mqtt_host
-    # Set up the client
-    client = mqtt.Client(client_id=mqtt_clientId)
-    client.username_pw_set(
-        username=mqtt_username,
-        password=mqtt_password
-    )
-    # client.tls_set(tls_version=mqtt.ssl.PROTOCOL_TLS)
-    # client.tls_insecure_set(True)
-    client.connect(mqtt_host, 8883, 60) # certificate error
-    # client.connect(mqtt_host) timeout
-
-    # Set up the callbacks
-    client.on_publish = on_publish
-    client.loop_start()
-
-def on_publish(client: mqtt.Client, userdata, mid, properties=None):
-    print("mid: " + str(mid))
-
-# def publish_mqtt_message():
-#     global client, mqtt_topic_publish, payload
-#     message_info = client.publish(
-#         topic=mqtt_topic_publish,
-#         payload=payload,
-#         qos=0
-#     )
-#
-#     message_info.wait_for_publish()
-
-################
-
 if __name__ == "__main__":
-    ################
-
-    # initialize mqtt
-    init_mqtt()
-
-    ################
 
     # initialize accumulated weight
     accumWeight = 0.5
 
     # get the reference to the webcam
     camera = cv2.VideoCapture(0)
-
-    # handDetector = HandDetector(detectionCon=0.8, maxHands=1)
-    eyeDetector = EyeDetector(maxFaces=1)
 
     fps = int(camera.get(cv2.CAP_PROP_FPS))
     # region of interest (ROI) coordinates
@@ -181,14 +106,6 @@ if __name__ == "__main__":
     k = 0
     # keep looping, until interrupted
     while (True):
-        # Get image frame
-        success, img = camera.read()
-
-        # # Find the hand and its landmarks with draw
-        # hands, detection = handDetector.findHands(img)
-        # Find the face and its landmarks with draw
-        detection, faces = eyeDetector.findFaceMesh(img)
-
         # get the current frame
         (grabbed, frame) = camera.read()
 
@@ -202,14 +119,6 @@ if __name__ == "__main__":
 
         # get the height and width of the frame
         (height, width) = frame.shape[:2]
-
-        # if hands:
-        #     bbox = hands[0]["bbox"]
-        #     bb_left = bbox[0] - 20
-        #     bb_top = bbox[1] - 20
-        #     bb_right = bbox[0] + bbox[2] + 20
-        #     bb_bottom = bbox[1] + bbox[3] + 20
-        #     roi2 = frame[bb_top:bb_bottom, bb_right:bb_left]
 
         # get the ROI
         roi = frame[top:bottom, right:left]
@@ -231,10 +140,7 @@ if __name__ == "__main__":
             hand = segment(gray)
 
             # check whether hand region is segmented
-            if hand is not None and faces:
-                face = faces[0]
-                eyeDetector.drawEyeContour(detection, face)
-
+            if hand is not None:
                 # if yes, unpack the thresholded image and
                 # segmented region
                 (thresholded, segmented) = hand
@@ -249,17 +155,6 @@ if __name__ == "__main__":
                     predictedClass = getPredictedClass(model)
                     cv2.putText(clone, str(predictedClass), (70, 45), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
                     print(predictedClass)
-                    ################
-
-                    client.publish(
-                        topic=mqtt_topic_publish,
-                        payload=payload,
-                        qos=2
-                    )
-                    # print(payload)
-                    # publish_mqtt_message()
-                    # Thread(target=publish_mqtt_message).start()
-                    ################
 
                 # show the thresholded image
                 cv2.imshow("Thesholded", thresholded)
@@ -273,11 +168,6 @@ if __name__ == "__main__":
 
         # display the frame with segmented hand
         cv2.imshow("Video Feed", clone)
-
-        # Display
-        detection = cv2.flip(detection, 1)
-        cv2.imshow("Detection", detection)
-        cv2.waitKey(1)
 
         # observe the keypress by the user
         keypress = cv2.waitKey(1) & 0xFF
