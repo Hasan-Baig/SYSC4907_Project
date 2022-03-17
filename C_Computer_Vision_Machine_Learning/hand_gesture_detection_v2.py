@@ -90,14 +90,7 @@ def main():
                     # Predict gesture
                     prediction = model.predict([landmarks])
                     classID = np.argmax(prediction)
-<<<<<<< HEAD
-                    className = classNames[classID]
-                    classNameList.append(className)
 
-                    if reset_counter == 10:
-                        print(mode(classNameList))
-                        reset_counter = 0
-=======
                     if classID < len(classNames):
                         className = classNames[classID]
                         class_name_predictions.append(classID)
@@ -106,7 +99,6 @@ def main():
         else:
             prediction_counter = 0
             class_name_predictions.clear()
->>>>>>> 9110df72e509281b926f41a6a2119de2116c0ca0
 
         # show the prediction on the frame
         cv2.putText(frame, className, (10, 50), cv2.FONT_HERSHEY_SIMPLEX,
