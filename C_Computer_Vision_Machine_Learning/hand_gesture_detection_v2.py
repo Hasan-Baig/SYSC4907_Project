@@ -10,7 +10,12 @@ import mediapipe as mp
 from tensorflow.keras.models import load_model
 from A_Computer_Vision.EyeTrackingModule import EyeDetector
 
+import statistics
+from statistics import mode
+
+# global variables
 MODEL_NAME = "mp_hand_gesture"
+classNameList = []
 
 def main():
     # initialize Eye Detector class for Eye Detection
@@ -33,6 +38,9 @@ def main():
 
     # Initialize the webcam
     cap = cv2.VideoCapture(0)
+
+    # counter for classname to be sent via MQTT
+    reset_counter = 0
 
     while True:
         # Read each frame from the webcam
@@ -70,6 +78,11 @@ def main():
                     prediction = model.predict([landmarks])
                     classID = np.argmax(prediction)
                     className = classNames[classID]
+                    classNameList.append(className)
+
+                    if reset_counter == 10:
+                        print(mode(classNameList))
+                        reset_counter = 0
 
         # show the prediction on the frame
         cv2.putText(frame, className, (10, 50), cv2.FONT_HERSHEY_SIMPLEX,
@@ -79,6 +92,9 @@ def main():
         cv2.imshow("Webcam", frame)
         if cv2.waitKey(1) == ord('q'):
             break
+
+        reset_counter = reset_counter + 1
+        print(reset_counter)
 
     # release the webcam and destroy all active windows
     cap.release()
